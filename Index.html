@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADITZ MASTER</title>
+    <style>
+        :root { --primary: #0f172a; --accent: #2563eb; --success: #16a34a; --error: #dc2626; --bg: #f8fafc; --card: #ffffff; }
+        body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--primary); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { width: 100%; max-width: 900px; text-align: center; }
+        h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 20px; color: #1e293b; text-transform: uppercase; }
+        .topic-selector { margin-bottom: 25px; }
+        select { padding: 12px 20px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 1.1rem; font-weight: 700; color: var(--primary); cursor: pointer; background: white; width: 100%; max-width: 500px; outline: none; }
+        .mode-switcher { background: #e2e8f0; padding: 4px; border-radius: 12px; display: inline-flex; margin-bottom: 20px; }
+        .mode-btn { border: none; padding: 10px 25px; border-radius: 10px; font-weight: 700; cursor: pointer; color: #64748b; background: transparent; transition: 0.2s; }
+        .mode-btn.active { background: white; color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 10px; min-height: 40px; }
+        .filter-btn { background: white; border: 2px solid #cbd5e1; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+        .filter-btn.active { border-color: var(--accent); background: var(--accent); color: white; }
+        .game-area { position: relative; width: 100%; height: 420px; perspective: 1000px; margin-bottom: 20px; }
+        .flashcard, .exam-card { width: 100%; height: 100%; position: absolute; border-radius: 24px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; box-sizing: border-box; }
+        .flashcard { transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-radius: 24px; background: var(--card); }
+        .face.back { transform: rotateY(180deg); background: #eff6ff; border-color: var(--accent); }
+        .exam-card { background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+        .exam-card.correct { background: #f0fdf4 !important; border-color: var(--success) !important; }
+        .exam-card.wrong { background: #fef2f2 !important; border-color: var(--error) !important; }
+        .cat-tag { text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1.5px; color: #94a3b8; font-weight: 800; margin-bottom: 15px; background: #f1f5f9; padding: 5px 10px; border-radius: 4px; }
+        .q-text { font-size: 2.2rem; font-weight: 800; line-height: 1.2; color: var(--primary); margin: 0; }
+        .q-sub { font-size: 1.1rem; color: #64748b; margin-top: 5px; margin-bottom: 20px; min-height: 1.2em; font-weight: 500; }
+        .a-text { font-size: 2.5rem; font-weight: 800; color: var(--accent); text-align: center; }
+        input { width: 90%; max-width: 400px; padding: 15px; font-size: 1.5rem; text-align: center; border: 3px solid #e2e8f0; border-radius: 12px; outline: none; font-weight: 600; background: #f8fafc; transition: 0.2s; }
+        .btn { background: var(--accent); color: white; border: none; padding: 15px 40px; font-size: 1rem; font-weight: 800; border-radius: 12px; cursor: pointer; margin-top: 15px; }
+        .btn-next { background: var(--primary); display: none; }
+        .counter { font-size: 0.85rem; color: #94a3b8; font-weight: 600; margin-top: 10px; }
+        .note { font-size: 0.85rem; color: #64748b; display: block; margin-top: 8px; font-weight: 400; }
+        .d-none { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ADITZ MASTER</h1>
+        <div class="topic-selector">
+            <select id="topic" onchange="initTopic(this.value)">
+                <option value="trinkoak">1. ADITZ TRINKOAK</option>
+                <option value="aspektuak">2. TRINKO ASPEKTUAK</option>
+                <option value="laguntzaileak">3. LAGUNTZAILEAK</option>
+                <option value="ahalera">4. AHALERA</option>
+                <option value="baldintzak">5. BALDINTZAK</option>
+                <option value="agintera">6. AGINTERA</option>
+                <option value="lokuzioak">7. ADITZ LOKUZIOAK</option>
+            </select>
+        </div>
+        <div class="mode-switcher">
+            <button class="mode-btn active" id="btnStudy" onclick="setMode('study')">Ikasketa</button>
+            <button class="mode-btn" id="btnExam" onclick="setMode('exam')">Azterketa</button>
+        </div>
+        <div id="filterContainer">
+            <div class="filters" id="catFilters"></div>
+            <div class="filters" id="timeFilters"></div>
+        </div>
+        <div class="game-area">
+            <div class="flashcard" id="cardStudy" onclick="flip()">
+                <div class="face front">
+                    <div class="cat-tag" id="s-cat">...</div>
+                    <div class="q-text" id="s-q">...</div>
+                    <div class="q-sub" id="s-sub"></div>
+                    <div style="color:#cbd5e1; font-size:0.7rem; margin-top:20px;">(Ukitu biratzeko)</div>
+                </div>
+                <div class="face back"><div class="cat-tag">ERANTZUNA</div><div class="a-text" id="s-a">...</div></div>
+            </div>
+            <div class="exam-card d-none" id="cardExam">
+                <div class="cat-tag" id="e-cat">...</div>
+                <div class="q-text" id="e-q">...</div>
+                <div class="q-sub" id="e-sub"></div>
+                <input type="text" id="in" autocomplete="off" placeholder="Idatzi euskaraz..." spellcheck="false">
+                <div id="fb" style="min-height:30px; margin-top:10px;"></div>
+                <div><button class="btn" id="bCheck" onclick="check()">EGIAZTATU</button><button class="btn btn-next" id="bNext" onclick="loadCard()">HURRENGOA</button></div>
+            </div>
+        </div>
+        <button class="btn" id="studyNext" onclick="loadCard()" style="background:#2563eb;">Hurrengo txartela</button>
+        <div class="counter" id="counter">Kargatzen...</div>
+    </div>
+
+    <script>
+    let MASTER_DB = {};
+    let pool = [], filterCats = new Set(), filterTimes = new Set(), cur = null, mode = 'study', answered = false, currentDb = [];
+    const $ = id => document.getElementById(id);
+
+function populateDB() {
+        // 1. DECLARACIÓN DE VARIABLES DE APOYO (Imprescindible aquí dentro)
+        const norP = ["Ni", "Zu", "Hura", "Gu", "Zuek", "Haiek"];
+        const nkP = ["Nik", "Zuk", "Hark", "Guk", "Zuek", "Haiek"];
+        const nriP = ["Niri", "Zuri", "Hari", "Guri", "Zuei", "Haiei"];
+
+        // --- 1. TRINKOAK ---
+        MASTER_DB.trinkoak = [];
+        const t_data = [
+            ["EGON", "Nago,Zaude,Dago,Gaude,Zaudete,Daude", "Nengoen,Zeunden,Zegoen,Geunden,Zeundeten,Zeuden"],
+            ["IBILI", "Nabil,Zabiltza,Dabil,Gabiltza,Zabiltzate,Dabiltza", "Nenbilen,Zenbiltzan,Zebilen,Genbiltzan,Zenbiltzaten,Zebiltzan"],
+            ["JOAN", "Noa,Zoaz,Doa,Goaz,Zoazte,Doaz", "Nindoan,Zindoazen,Zihoan,Gindoazen,Zindoazten,Zihoazen"],
+            ["ETORRI", "Nator,Zatoz,Dator,Gatoz,Zatozte,Datoz", "Nentorren,Zentozen,Zetorren,Gentozen,Zentozten,Zetozen"],
+            ["EDUKI (Sg.)", "Daukat,Daukazu,Dauka,Daukagu,Daukazue,Daukate", "Neukan,Zeneukan,Zeukan,Geneukan,Zeneukaten,Zeukaten"],
+            ["EDUKI (Pl.)", "Dauzkat,Dauzkazu,Dauzka,Dauzkagu,Dauzkazue,Dauzkate", "Neuzkan,Zeneuzkan,Zeuzkan,Geneuzkan,Zeneuzkaten,Zeuzkaten"],
+            ["EKARRI (Sg.)", "Dakart,Dakarzu,Dakar,Dakargu,Dakarzue,Dakarte", "Nekarren,Zenekarren,Zekarren,Genekarren,Zenekarten,Zekarten"],
+            ["EKARRI (Pl.)", "Dakartzat,Dakartzazu,Dakartza,Dakartzagu,Dakartzazue,Dakartzate", "Nekartzan,Zenekartzan,Zekartzan,Genekartzan,Zenekartzaten,Zekartzaten"],
+            ["ERAMAN (Sg.)", "Daramat,Daramazu,Darama,Daramagu,Daramazue,Daramate", "Neraman,Zeneraman,Zeraman,Generaman,Zeneramaten,Zeramaten"],
+            ["ERAMAN (Pl.)", "Daramatzat,Daramatzazu,Daramatza,Daramatzagu,Daramatzazue,Daramatzate", "Neramatzan,Zeneramatzan,Zeramatzan,Generamatzan,Zeneramatzaten,Zeramatzaten"],
+            ["JAKIN (Sg.)", "Dakit,Dakizu,Daki,Dakigu,Dakizue,Dakite", "Nekien,Zenekien,Zekien,Genekien,Zenekiten,Zekiten"],
+            ["JAKIN (Pl.)", "Dakizkit,Dakizkizu,Dakizki,Dakizkigu,Dakizkizue,Dakizkite", "Nekizkien,Zenekizkien,Zekizkien,Genekizkien,Zenekizkiten,Zekizkiten"],
+            ["ERABILI (Sg.)", "Darabilt,Darabilzu,Darabil,Darabilgu,Darabilzue,Darabilte", "Nerabilen,Zenerabilen,Zerabilen,Generabilen,Zenerabilten,Zerabilten"],
+            ["ERABILI (Pl.)", "Darabiltzat,Darabiltzazu,Darabiltza,Darabiltzagu,Darabiltzazue,Darabiltzate", "Nerabiltzan,Zenerabiltzan,Zerabiltzan,Generabiltzan,Zenerabiltzaten,Zerabiltzaten"],
+            ["ESAN", "Diot,Diozu,Dio,Diogu,Diozue,Diote", "Nion,Zenion,Zion,Genion,Zenioten,Zioten"],
+            ["IRUDITU", "Dirudit,Dirudizu,Dirudi,Dirudigu,Dirudizue,Dirudite", "Nirudien,Zenirudien,Zirudien,Genirudien,Zeniruditen,Ziruditen"]
+        ];
+        t_data.forEach(d => {
+            const arr = (d[0].includes("(") || ["ESAN","IRUDITU"].includes(d[0])) ? nkP : norP;
+            d[1].split(",").forEach((v,i) => MASTER_DB.trinkoak.push({q:arr[i]+" ("+d[0]+")", a:v, c:d[0].split(" ")[0], t:"ORAINALDIA"}));
+            d[2].split(",").forEach((v,i) => MASTER_DB.trinkoak.push({q:arr[i]+" ("+d[0]+")", a:v, c:d[0].split(" ")[0], t:"LEHENALDIA"}));
+        });
+
+        // --- 2. ASPEKTUAK ---
+        MASTER_DB.aspektuak = [];
+        const asp_raw = [
+            ["ETORRI", "Venía,Zetorren,(en ese momento)", "Estaba viniendo,Etortzen ari zen,", "Venía,Etortzen zen,(solía venir)", "Vendría,Etorriko zen,", "Viene,Dator,(en este momento)", "Está viniendo,Etortzen ari da,", "Viene,Etortzen da,(suele venir)"],
+            ["JOAN", "Iba,Zihoan,(en ese momento)", "Estaba yendo,Joaten ari zen,", "Iba,Joaten zen,(solía ir)", "Iría,Joango zen,", "Va,Doa,(en este momento)", "Está yendo,Joaten ari da,", "Va,Joaten da,(suele ir)"],
+            ["IBILI", "Andaba,Zebilen,(en ese momento)", "Estaba andando,Ibiltzen ari zen,", "Andaba,Ibiltzen zen,(solía andar)", "Andaría,Ibiliko zen,", "Anda,Dabil,(en este momento)", "Está andando,Ibiltzen ari da,", "Anda,Ibiltzen da,(suele andar)"],
+            ["EKARRI", "Traía,Zekarren,(en ese momento)", "Estaba trayendo,Ekartzen ari zen,", "Traía,Ekartzen zuen,(solía traer)", "Traería,Ekarriko zuen,", "Trae,Dakar,(en este momento)", "Está trayendo,Ekartzen ari da,", "Trae,Ekartzen du,(suele traer)"],
+            ["ERAMAN", "Llevaba,Zeraman,(en ese momento)", "Estaba llevando,Eramaten ari zen,", "Llevaba,Eramaten zuen,(solía llevar)", "Llevaría,Eramango zuen,", "Lleva,Darama,(en este momento)", "Está llevando,Eramaten ari da,", "Lleva,Eramaten du,(suele llevar)"]
+        ];
+        asp_raw.forEach(v => { for(let i=1; i<v.length; i++){ const parts = v[i].split(","); MASTER_DB.aspektuak.push({q:parts[0], a:parts[1], sub:parts[2]||"", c:v[0]}); } });
+
+        // --- 3. LAGUNTZAILEAK ---
+        MASTER_DB.laguntzaileak = [];
+        norP.forEach((p,i)=> { 
+            MASTER_DB.laguntzaileak.push({q:p, a:["naiz","zara","da","gara","zarete","dira"][i], c:"NOR", t:"ORAINALDIA"}, {q:p, a:["nintzen","zinen","zen","ginen","zineten","ziren"][i], c:"NOR", t:"LEHENALDIA"}); 
+        });
+        nkP.forEach((p,i)=> { 
+            MASTER_DB.laguntzaileak.push({q:p+" (Sg.)", a:["dut","duzu","du","dugu","duzue","dute"][i], c:"NORK", t:"ORAINALDIA"}, {q:p+" (Pl.)", a:["ditut","dituzu","ditu","ditugu","dituzue","dituzte"][i], c:"NORK", t:"ORAINALDIA"});
+            MASTER_DB.laguntzaileak.push({q:p+" (Sg.)", a:["nuen","zenuen","zuen","genuen","zenuten","zuten"][i], c:"NORK", t:"LEHENALDIA"}, {q:p+" (Pl.)", a:["nituen","zenituen","zituen","genituen","zenituzten","zituzten"][i], c:"NORK", t:"LEHENALDIA"});
+        });
+        nriP.forEach((p,i)=> { 
+            MASTER_DB.laguntzaileak.push({q:p+" (Sg.)", a:["zait","zaizu","zaio","zaigu","zaizue","zaie"][i], c:"NOR-NORI", t:"ORAINALDIA"}, {q:p+" (Pl.)", a:["zaizkit","zaizkizu","zaizkio","zaizkigu","zaizkizue","zaizkie"][i], c:"NOR-NORI", t:"ORAINALDIA"});
+            MASTER_DB.laguntzaileak.push({q:p+" (Sg.)", a:["zitzaidan","zitzaizun","zitzaion","zitzaigun","zitzaizuen","zitzaien"][i], c:"NOR-NORI", t:"LEHENALDIA"}, {q:p+" (Pl.)", a:["zitzaizkidan","zitzaizkizun","zitzaizkion","zitzaizkigun","zitzaizkizuen","zitzaizkien"][i], c:"NOR-NORI", t:"LEHENALDIA"});
+        });
+        const l_nO = {"Hark":{"Ni":"nau","Zu":"zaitu","Gu":"gaitu","Zuek":"zaituzte"},"Zu":{"Ni":"nauzu","Gu":"gaituzu"},"Zuek":{"Ni":"nauzue","Gu":"gaituzue"},"Nik":{"Zu":"zaitut","Zuek":"zaituztet"},"Guk":{"Zu":"zaitugu","Zuek":"zaituztegu"},"Haiek":{"Ni":"naute","Zu":"zaituzte","Gu":"gaituzte","Zuek":"zaituztete"}};
+        const l_nL = {"Hark":{"Ni":"ninduen","Zu":"zintuen","Gu":"gintuen","Zuek":"zintuzten"},"Zu":{"Ni":"ninduzun","Gu":"gintuzun"},"Zuek":{"Ni":"ninduzuen","Gu":"gintuzuen"},"Nik":{"Zu":"zintudan","Zuek":"zintuztedan"},"Guk":{"Zu":"zintugun","Zuek":"zintuztegun"},"Haiek":{"Ni":"ninduten","Zu":"zintuzten","Gu":"gintuzten","Zuek":"zintuzteten"}};
+        [l_nO, l_nL].forEach((v, idx) => { for(let a in v) for(let p in v[a]) MASTER_DB.laguntzaileak.push({q:a+" "+p.toLowerCase(), a:v[a][p], c:"NOR-NORK", t:idx===0?"ORAINALDIA":"LEHENALDIA"}); });
+        
+        const nnn_l_data = {
+            "ORAINALDIA": {"Nik":{"Zuri":"dizut/dizkizut","Hari":"diot/dizkiot","Zuei":"dizuet/dizkizuet","Haiei":"diet/dizkiet"},"Zuk":{"Niri":"didazu/dizkidazu","Hari":"diozu/dizkiozu","Guri":"diguzu/dizkiguzu","Haiei":"diezu/dizkiezu"},"Hark":{"Niri":"dit/dizkit","Zuri":"dizu/dizkizu","Hari":"dio/dizkio","Guri":"digu/dizkigu","Zuei":"dizue/dizkizue","Haiei":"die/dizkie"},"Guk":{"Zuri":"dizugu/dizkizugu","Hari":"diogu/dizkiogu","Zuei":"dizuegu/dizkizuegu","Haiei":"diegu/dizkiegu"},"Zuek":{"Niri":"didazue/dizkidazue","Hari":"diozue/dizkiozue","Guri":"diguzue/dizkiguzue","Haiei":"diezue/dizkiezue"},"Haiek":{"Niri":"didate/dizkidate","Zuri":"dizute/dizkizute","Hari":"diote/dizkiote","Guri":"digute/dizkigute","Zuei":"dizuete/dizkizuete","Haiei":"diete/dizkie"}},
+            "LEHENALDIA": {"Nik":{"Zuri":"nizun/nizkizun","Hari":"nion/nizkion","Zuei":"nizuen/nizkizuen","Haiei":"nien/nizkien"},"Zuk":{"Niri":"zenidan/zenizkidan","Hari":"zenion/zenizkion","Guri":"zenigun/zenizkigun","Haiei":"zenien/zenizkien"},"Hark":{"Niri":"zidan/zizkidan","Zuri":"zizun/zizkizun","Hari":"zion/zizkion","Guri":"zigun/zizkigun","Zuei":"zizuen/zizkizuen","Haiei":"zien/zizkien"},"Guk":{"Zuri":"genizun/genizkizun","Hari":"genion/genizkion","Zuei":"genizuen/genizkizuen","Haiei":"genien/genizkien"},"Zuek":{"Niri":"zenidaten/zenizkidaten","Hari":"zenioten/zenizkioten","Guri":"zeniguten/zenizkiguten","Haiei":"zenieten/zenizkieten"},"Haiek":{"Niri":"zidaten/zizkidaten","Zuri":"zizuten/zizkizuten","Hari":"zioten/zizkioten","Guri":"ziguten/zizkiguten","Zuei":"zizueten/zizkizueten","Haiei":"zieten/zizkien"}}
+        };
+        for(let t in nnn_l_data) for(let a in nnn_l_data[t]) for(let b in nnn_l_data[t][a]) { 
+            const p = nnn_l_data[t][a][b].split("/"); 
+            MASTER_DB.laguntzaileak.push({q:a+" "+b.toLowerCase()+" (Sg.)", a:p[0], c:"NOR-NORI-NORK", t:t}, {q:a+" "+b.toLowerCase()+" (Pl.)", a:p[1]||p[0], c:"NOR-NORI-NORK", t:t}); 
+        }
+
+        // --- 4. AHALERA ---
+        MASTER_DB.ahalera = [];
+        const addAh = (q, a, c, t) => MASTER_DB.ahalera.push({q, a, c, t});
+        norP.forEach((p,i) => {
+            addAh(p, ["Naiteke","Zaitezke","Daiteke","Gaitezke","Zaitezkete","Daitezke"][i], "NOR", "ORAINALDIA");
+            addAh(p, ["Ninteke","Zinteke","Liteke","Ginteke","Zintekete","Litezke"][i], "NOR", "HIPOTETIKOA");
+            addAh(p, ["Nintekeen","Zintekeen","Zitekeen","Gintekeen","Zinteketen","Ziteketen"][i], "NOR", "LEHENALDIA");
+        });
+        nkP.forEach((p,i) => {
+            addAh(p+" (Sg.)", ["Dezaket","Dezakezu","Dezake","Dezakegu","Dezakezue","Dezakete"][i], "NORK", "ORAINALDIA");
+            addAh(p+" (Pl.)", ["Ditzaket","Ditzakezu","Ditzake","Ditzakegu","Ditzakezue","Ditzakete"][i], "NORK", "ORAINALDIA");
+            addAh(p+" (Sg.)", ["Nezake","Zenezake","Lezake","Genezake","Zenezakete","Lezakete"][i], "NORK", "HIPOTETIKOA");
+            addAh(p+" (Pl.)", ["Nitzake","Zenitzake","Litzake","Genitzake","Zenitzakete","Litzakete"][i], "NORK", "HIPOTETIKOA");
+            addAh(p+" (Sg.)", ["Nezakeen","Zenezakeen","Zezakeen","Genezakeen","Zenezaketen","Zezaketen"][i], "NORK", "LEHENALDIA");
+            addAh(p+" (Pl.)", ["Nitzakeen","Zenitzakeen","Zitzakeen","Genitzakeen","Zenitzaketen","Zitzaketen"][i], "NORK", "LEHENALDIA");
+        });
+        const aO = [["Nik Zu","Zaitzaket"],["Nik Zuek","Zaitzaketet"],["Zuk Ni","Nazakezu"],["Zuk Gu","Gaitzakezu"],["Hark Ni","Nazake"],["Hark Zu","Zaitzake"],["Hark Gu","Gaitzake"],["Hark Zuek","Zaitzakete"],["Guk Zu","Zaitzakegu"],["Guk Zuek","Zaitzaketegu"],["Zuek Ni","Nazakezue"],["Zuek Gu","Gaitzakezue"],["Haiek Ni","Nazakete"],["Haiek Zu","Zaitzakete"],["Haiek Gu","Gaitzakete"],["Haiek Zuek","Zaitzaketete"]];
+        const aH = [["Nik Zu","Zintzaket"],["Nik Zuek","Zintzaketet"],["Zuk Ni","Nintzakezu"],["Zuk Gu","Gintzakezu"],["Hark Ni","Nintzake"],["Hark Zu","Zintzake"],["Hark Gu","Gintzake"],["Hark Zuek","Zintzakete"],["Guk Zu","Zintzakegu"],["Guk Zuek","Zintzaketegu"],["Zuek Ni","Nintzakezue"],["Zuek Gu","Gintzakezue"],["Haiek Ni","Nintzakete"],["Haiek Zu","Zintzakete"],["Haiek Gu","Gintzakete"],["Haiek Zuek","Zintzaketete"]];
+        const aL = [["Nik Zu","Zintzakedan"],["Nik Zuek","Zintzaketedan"],["Zuk Ni","Nintzakezun"],["Zuk Gu","Gintzakezun"],["Hark Ni","Nintzakeen"],["Hark Zu","Zintzakeen"],["Hark Gu","Gintzakeen"],["Hark Zuek","Zintzaketen"],["Guk Zu","Zintzakegun"],["Guk Zuek","Zintzaketegun"],["Zuek Ni","Nintzakezuen"],["Zuek Gu","Gintzakezuen"],["Haiek Ni","Nintzaketen"],["Haiek Zu","Zintzaketen"],["Haiek Gu","Gintzaketen"],["Haiek Zuek","Zintzaketeten"]];
+        aO.forEach(d => addAh(d[0], d[1], "NOR-NORK", "ORAINALDIA"));
+        aH.forEach(d => addAh(d[0], d[1], "NOR-NORK", "HIPOTETIKOA"));
+        aL.forEach(d => addAh(d[0], d[1], "NOR-NORK", "LEHENALDIA"));
+
+        const nnn_a_data = {
+            "ORAINALDIA": {"Nik":{"Zuri":["Diezazuket","Diezaizkizuket"],"Hari":["Diezaioket","Diezaizkioket"],"Zuei":["Diezazueket","Diezaizkizueket"],"Haiei":["Diezaieket","Diezaizkieket"]},"Zuk":{"Niri":["Diezadakezu","Diezaizkidakezu"],"Hari":["Diezaiokezu","Diezaizkiokezu"],"Guri":["Diezagukezu","Diezaizkigukezu"],"Haiei":["Diezaiekezu","Diezaizkiekezu"]},"Hark":{"Niri":["Diezadake","Diezaizkidake"],"Zuri":["Diezazuke","Diezaizkizuke"],"Hari":["Diezaioke","Diezaizkioke"],"Guri":["Diezaguke","Diezaizkiguke"],"Zuei":["Diezazueke","Diezaizkizueke"],"Haiei":["Diezaieke","Diezaizkieke"]},"Guk":{"Zuri":["Diezazukegu","Diezaizkizukegu"],"Hari":["Diezaiokegu","Diezaizkiokegu"],"Zuei":["Diezazuekegu","Diezaizkizuekegu"],"Haiei":["Diezaiekegu","Diezaizkiekegu"]},"Zuek":{"Niri":["Diezadakezue","Diezaizkidakezue"],"Hari":["Diezaiokezue","Diezaizkiokezue"],"Guri":["Diezagukezue","Diezaizkigukezue"],"Haiei":["Diezaiekezue","Diezaizkiekezue"]},"Haiek":{"Niri":["Diezadakete","Diezaizkidakete"],"Zuri":["Diezazukete","Diezaizkizukete"],"Hari":["Diezaiokete","Diezaizkiokete"],"Guri":["Diezagukete","Diezaizkigukete"],"Zuei":["Diezazuekete","Diezaizkizuekete"],"Haiei":["Diezaiekete","Diezaizkiekete"]}},
+            "HIPOTETIKOA": {"Nik":{"Zuri":["Niezazuke","Niezaizkizuke"],"Hari":["Niezaioke","Niezaizkioke"],"Zuei":["Niezazueke","Niezaizkizueke"],"Haiei":["Niezaieke","Niezaizkieke"]},"Zuk":{"Niri":["Zeniezadake","Zeniezaizkidake"],"Hari":["Zeniezaioke","Zeniezaizkioke"],"Guri":["Zeniezaguke","Zeniezaizkiguke"],"Haiei":["Zeniezaieke","Zeniezaizkieke"]},"Hark":{"Niri":["Liezadake","Liezaizkidake"],"Zuri":["Liezazuke","Liezaizkizuke"],"Hari":["Liezaioke","Liezaizkioke"],"Guri":["Liezaguke","Liezaizkiguke"],"Zuei":["Liezazueke","Liezaizkizueke"],"Haiei":["Liezaieke","Liezaizkieke"]},"Guk":{"Zuri":["Geniezazuke","Geniezaizkizuke"],"Hari":["Geniezaioke","Geniezaizkioke"],"Zuei":["Geniezazueke","Geniezaizkizueke"],"Haiei":["Geniezaieke","Geniezaizkieke"]},"Zuek":{"Niri":["Zeniezadakete","Zeniezaizkidakete"],"Hari":["Zeniezaiokete","Zeniezaizkiokete"],"Guri":["Zeniezagukete","Zeniezaizkigukete"],"Haiei":["Zeniezaiekete","Zeniezaizkiekete"]},"Haiek":{"Niri":["Liezadakete","Liezaizkidakete"],"Zuri":["Liezazukete","Liezaizkizukete"],"Hari":["Liezaiokete","Liezaizkiokete"],"Guri":["Liezagukete","Liezaizkigukete"],"Zuei":["Liezazuekete","Liezaizkizuekete"],"Haiei":["Liezaiekete","Liezaizkiekete"]}},
+            "LEHENALDIA": {"Nik":{"Zuri":["Niezazukeen","Niezaizkizukeen"],"Hari":["Niezaiokeen","Niezaizkiokeen"],"Zuei":["Niezazuekeen","Niezaizkizuekeen"],"Haiei":["Niezaiekeen","Niezaizkiekeen"]},"Zuk":{"Niri":["Zeniezadakeen","Zeniezaizkidakeen"],"Hari":["Zeniezaiokeen","Zeniezaizkiokeen"],"Guri":["Zeniezagukeen","Zeniezaizkigukeen"],"Haiei":["Zeniezaiekeen","Zeniezaizkiekeen"]},"Hark":{"Niri":["Ziezadakeen","Ziezaizkidakeen"],"Zuri":["Ziezazukeen","Ziezaizkizukeen"],"Hari":["Ziezaiokeen","Ziezaizkiokeen"],"Guri":["Ziezagukeen","Ziezaizkigukeen"],"Zuei":["Ziezazuekeen","Ziezaizkizuekeen"],"Haiei":["Ziezaiekeen","Ziezaizkiekeen"]},"Guk":{"Zuri":["Geniezazukeen","Geniezaizkizukeen"],"Hari":["Geniezaiokeen","Geniezaizkiokeen"],"Zuei":["Geniezazuekeen","Geniezaizkizuekeen"],"Haiei":["Geniezaiekeen","Geniezaizkiekeen"]},"Zuek":{"Niri":["Zeniezadaketen","Zeniezaizkidaketen"],"Hari":["Zeniezaioketen","Zeniezaizkioketen"],"Guri":["Zeniezaguketen","Zeniezaizkiguketen"],"Haiei":["Zeniezaieketen","Zeniezaizkieketen"]},"Haiek":{"Niri":["Ziezadaketen","Ziezaizkidaketen"],"Zuri":["Ziezazuketen","Ziezaizkizuketen"],"Hari":["Ziezaioketen","Ziezaizkioketen"],"Guri":["Ziezaguketen","Ziezaizkiguketen"],"Zuei":["Ziezazueketen","Ziezaizkizueketen"],"Haiei":["Ziezaieketen","Ziezaizkieketen"]}}
+        };
+
+        for(let t in nnn_a_data) for(let sub in nnn_a_data[t]) for(let ind in nnn_a_data[t][sub]) {
+            const arr = nnn_a_data[t][sub][ind];
+            addAh(`${sub} ${ind} (Sg.)`, arr[0], "NOR-NORI-NORK", t);
+            addAh(`${sub} ${ind} (Pl.)`, arr[1] || arr[0], "NOR-NORI-NORK", t);
+        }
+
+        // --- 5. BALDINTZAK ---
+        MASTER_DB.baldintzak = [];
+        norP.forEach((p,i)=> { 
+            MASTER_DB.baldintzak.push({q:p, a:["banintz","bazina","balitz","bagina","bazinate","balira"][i], c:"NOR", t:"BALDINTZA"}, {q:p, a:["nintzateke","zinateke","litzateke","ginateke","zinatekete","lirateke"][i], c:"NOR", t:"ONDORIOA"}); 
+        });
+        nkP.forEach((p,i)=> { 
+            MASTER_DB.baldintzak.push({q:p+" (Sg.)", a:["banu","bazenu","balu","bagenu","bazenute","balute"][i], c:"NORK", t:"BALDINTZA"}, {q:p+" (Pl.)", a:["banitu","bazenitu","balitu","bagenitu","bazenituzte","balituzte"][i], c:"NORK", t:"BALDINTZA"});
+            MASTER_DB.baldintzak.push({q:p+" (Sg.)", a:["nuke","zenuke","luke","genuke","zenukete","lukete"][i], c:"NORK", t:"ONDORIOA"}, {q:p+" (Pl.)", a:["nituzke","zenituzke","lituzke","genituzke","zenituzkete","lituzkete"][i], c:"NORK", t:"ONDORIOA"});
+        });
+        const bNN=["Hark ni,banindu,ninduke","Zu ni,baninduzu,nindukezu","Zuek ni,baninduzue,nindukezue","Hark gu,bagintu,gintuzke","Zu gu,bagintuzu,gintuzkezu","Zuek gu,bagintuzue,gintuzkezue","Nik zu,bazintut,zintuzketet","Hark zu,balizintu,lizintuzke","Guk zu,bazintugu,zintuzkegu","Nik zuek,bazintuztet,zintuzketet","Hark zuek,balizintuzte,lizintuzkete","Guk zuek,bazintuztegu,zintuzketegu"];
+        bNN.forEach(v => { const pts=v.split(","); MASTER_DB.baldintzak.push({q:pts[0], a:pts[1], c:"NOR-NORK", t:"BALDINTZA"}, {q:pts[0], a:pts[2], c:"NOR-NORK", t:"ONDORIOA"}); });
+        nriP.forEach((p,i)=> { 
+            MASTER_DB.baldintzak.push({q:p+" (Sg.)", a:["balitzait","balitzaizu","balitzaio","balitzaigu","balitzaizue","balitzaie"][i], c:"NOR-NORI", t:"BALDINTZA"}, {q:p+" (Pl.)", a:["balitzaizkit","balitzaizkizu","balitzaizkio","balitzaizkigu","balitzaizkizue","balitzaizkie"][i], c:"NOR-NORI", t:"BALDINTZA"});
+            MASTER_DB.baldintzak.push({q:p+" (Sg.)", a:["litzaidake","litzaizuke","litzaioke","litzaiguke","litzaizueke","litzaieke"][i], c:"NOR-NORI", t:"ONDORIOA"}, {q:p+" (Pl.)", a:["litzaizkidake","litzaizkizuke","litzaizkioke","litzaizkiguke","litzaizkizueke","litzaizkieke"][i], c:"NOR-NORI", t:"ONDORIOA"});
+        });
+        const bNNN_b = {"Nik":{"Zuri":"banizu/banizkizu","Hari":"banio/banizkio","Haiei":"banie/banizkie"},"Zuk":{"Niri":"bazenit/bazenizkit","Hari":"bazenio/bazenizkio","Guri":"bazenigu/bazenizkigu","Haiei":"bazenie/bazenizkie"},"Hark":{"Niri":"balit/balizkit","Zuri":"balizu/balizkizu","Hari":"balio/balizkio","Guri":"baligu/balizkigu","Haiei":"balie/balizkie"},"Guk":{"Zuri":"bagenizu/bagenizkizu","Hari":"bagenio/bagenizkio","Haiei":"bagenie/bagenizkie"},"Zuek":{"Niri":"bazenidate/bazenizkidate","Hari":"bazeniote/bazenizkiote","Guri":"bazenigute/bazenizkigute","Haiei":"bazeniete/bazenizkiete"},"Haiek":{"Niri":"balidate/balizkidate","Zuri":"balizute/balizkizute","Hari":"baliote/balizkiote","Guri":"baligute/balizkigute","Haiei":"baliete/balizkiete"}};
+        const bNNN_o = {"Nik":{"Zuri":"nizuke/nizkizuke","Hari":"nioke/nizkioke","Haiei":"nieke/nizkieke"},"Zuk":{"Niri":"zenidake/zenizkidake","Hari":"zenioke/zenizkioke","Guri":"zeniguke/zenizkiguke","Haiei":"zenieke/zenizkieke"},"Hark":{"Niri":"lidake/lizkidake","Zuri":"lizuke/lizkizuke","Hari":"lioke/lizkioke","Guri":"liguke/lizkiguke","Haiei":"lieke/lizkieke"},"Guk":{"Zuri":"genizuke/genizkizuke","Hari":"genioke/genizkioke","Haiei":"genieke/genizkieke"},"Zuek":{"Niri":"zenidakete/zenizkidakete","Hari":"zeniokete/zenizkiokete","Guri":"zenigukete/zenizkigukete","Haiei":"zeniekete/zenizkiekete"},"Haiek":{"Niri":"lidakete/lizkidakete","Zuri":"lizukete/lizkizukete","Hari":"liokete/lizkiokete","Guri":"ligukete/lizkigukete","Haiei":"liekete/lizkiekete"}};
+        [bNNN_b, bNNN_o].forEach((v, idx) => { const time = idx === 0 ? "BALDINTZA" : "ONDORIOA"; for(let a in v) for(let b in v[a]) { const pts = v[a][b].split("/"); MASTER_DB.baldintzak.push({q:a+" "+b+" (Sg.)", a:pts[0].trim(), c:"NOR-NORI-NORK", t:time}, {q:a+" "+b+" (Pl.)", a:(pts[1]||pts[0]).trim(), c:"NOR-NORI-NORK", t:time}); } });
+
+        // --- 6. AGINTERA ---
+        MASTER_DB.agintera = [{q:"Zu", a:"Zaitez", c:"NOR"},{q:"Zuek", a:"Zaitezte", c:"NOR"},{q:"Zuk (Sg.)", a:"Ezazu", c:"NOR-NORK"},{q:"Zuek (Sg.)", a:"Ezazue", c:"NOR-NORK"},{q:"Zuk (Pl.)", a:"Itzazu", c:"NOR-NORK"},{q:"Zuek (Pl.)", a:"Itzazue", c:"NOR-NORK"},{q:"Zuk Niri (Sg.)", a:"Iezadazu", c:"NOR-NORI-NORK"},{q:"Zuk Hari (Sg.)", a:"Iezaiozu", c:"NOR-NORI-NORK"},{q:"Zuk Guri (Sg.)", a:"Iezaguzu", c:"NOR-NORI-NORK"},{q:"Zuk Haiei (Sg.)", a:"Iezaiezu", c:"NOR-NORI-NORK"},{q:"Zuek Niri (Sg.)", a:"Iezadazue", c:"NOR-NORI-NORK"},{q:"Zuek Hari (Sg.)", a:"Iezaiozue", c:"NOR-NORI-NORK"},{q:"Zuek Guri (Sg.)", a:"Iezaguzue", c:"NOR-NORI-NORK"},{q:"Zuek Haiei (Sg.)", a:"Iezaiezue", c:"NOR-NORI-NORK"},{q:"Zuk Niri (Pl.)", a:"Iezazkidazu", c:"NOR-NORI-NORK"},{q:"Zuk Hari (Pl.)", a:"Iezazkiozu", c:"NOR-NORI-NORK"},{q:"Zuk Guri (Pl.)", a:"Iezazkiguzu", c:"NOR-NORI-NORK"},{q:"Zuk Haiei (Pl.)", a:"Iezazkiezu", c:"NOR-NORI-NORK"},{q:"Zuek Niri (Pl.)", a:"Iezazkidazue", c:"NOR-NORI-NORK"},{q:"Zuek Hari (Pl.)", a:"Iezazkiozue", c:"NOR-NORI-NORK"},{q:"Zuek Guri (Pl.)", a:"Iezazkiguzue", c:"NOR-NORI-NORK"},{q:"Zuek Haiei (Pl.)", a:"Iezazkiezue", c:"NOR-NORI-NORK"}];
+
+        // --- 7. LOKUZIOAK ---
+        MASTER_DB.lokuzioak = [];
+        const lok_data = [
+  ["BIZI", [
+    "Vivió,Bizi izan zen", "Vivía,Bizi zen", "Solía vivir,Bizi izaten zen", "Iba a vivir,Bizi izango zen",
+    "Ha vivido,Bizi izan da", "Vive,Bizi da", "Suele vivir,Bizi izaten da", "Vivirá,Bizi izango da"
+  ]],
+  ["NAHI", [
+    "Quiso,Nahi izan zuen", "Quería,Nahi zuen", "Solía querer,Nahi izaten zuen", "Iba a querer,Nahi izango zuen",
+    "Ha querido,Nahi izan du", "Quiere,Nahi du", "Suele querer,Nahi izaten du", "Querrá,Nahi izango du"
+  ]],
+  ["BEHAR", [
+    "Necesitó/Tuvo que,Behar izan zuen", "Necesitaba/Tenía que,Behar zuen", "Solía necesitar,Behar izaten zuen", "Iba a necesitar,Behar izango zuen",
+    "Ha necesitado/Tenido que,Behar izan du", "Necesita/Tiene que,Behar du", "Suele necesitar,Behar izaten du", "Necesitará/Tendrá que,Behar izango du"
+  ]],
+  ["AHAL", [
+    "Pudo,Ahal izan zen", "Podía,Ahal zen", "Solía poder,Ahal izaten zen", "Iba a poder,Ahal izango zen",
+    "Ha podido,Ahal izan da", "Puede,Ahal da", "Suele poder,Ahal izaten da", "Podrá,Ahal izango da"
+  ]],
+  ["EZIN", [
+    "No pudo,Ezin izan zen", "No podía,Ezin zen", "No solía poder,Ezin izaten zen", "No iba a poder,Ezin izango zen",
+    "No ha podido,Ezin izan da", "No puede,Ezin da", "No suele poder,Ezin izaten da", "No podrá,Ezin izango da"
+  ]]
+];
+        lok_data.forEach(d => { d[1].forEach(f => { const pts = f.split(","); MASTER_DB.lokuzioak.push({q:pts[0], a:pts[1], c:d[0]}); }); });
+    }
+
+    function initTopic(id) { currentDb = MASTER_DB[id]; const cats = [...new Set(currentDb.map(i => i.c))]; const times = [...new Set(currentDb.filter(i => i.t).map(i => i.t))]; renderBtns('catFilters', cats, filterCats); renderBtns('timeFilters', times, filterTimes); pool = []; loadCard(); }
+    function renderBtns(cont, list, set) { $(cont).innerHTML = ''; set.clear(); list.forEach(i => { set.add(i); const b = document.createElement('button'); b.className = 'filter-btn active'; b.innerText = i; b.onclick = () => { set.has(i) ? set.delete(i) : set.add(i); b.classList.toggle('active'); pool = []; loadCard(); }; $(cont).appendChild(b); }); }
+    function setMode(m) { mode = m; $('btnStudy').classList.toggle('active', m==='study'); $('btnExam').classList.toggle('active', m==='exam'); if(m==='study') { $('cardStudy').classList.remove('d-none'); $('cardExam').classList.add('d-none'); $('studyNext').classList.remove('d-none'); } else { $('cardStudy').classList.add('d-none'); $('cardExam').classList.remove('d-none'); $('studyNext').classList.add('d-none'); } loadCard(); }
+    function loadCard() { const filtered = currentDb.filter(i => filterCats.has(i.c) && (!i.t || filterTimes.has(i.t))); if (!filtered.length) { $('counter').innerText = "Ez dago daturik"; return; } if (pool.length === 0) pool = [...filtered].sort(() => Math.random() - 0.5); $('counter').innerText = `Geratzen direnak: ${pool.length} / ${filtered.length}`; cur = pool.pop(); answered = false; $('cardStudy').classList.remove('flipped'); $('cardExam').classList.remove('correct', 'wrong'); $('fb').innerHTML = ''; $('in').value = ''; $('in').disabled = false; $('bCheck').style.display = 'inline-block'; $('bNext').style.display = 'none'; setTimeout(() => { $('s-cat').innerText = $('e-cat').innerText = cur.t ? `${cur.c} - ${cur.t}` : cur.c; $('s-q').innerText = $('e-q').innerText = cur.q; $('s-sub').innerText = $('e-sub').innerText = cur.sub || ""; const rawA = cur.a.includes('*') ? `${cur.a.split('*')[0]} <span class="note">*${cur.a.split('*')[1]}</span>` : cur.a; $('s-a').innerHTML = rawA; }, 150); if(mode === 'exam') setTimeout(()=> $('in').focus(), 200); }
+    function flip() { if(mode === 'study') $('cardStudy').classList.toggle('flipped'); }
+    function check() {
+        if(answered) return;
+        const val = $('in').value.trim().toLowerCase();
+        const parts = cur.a.split('*');
+        const correct = parts[0].trim().toLowerCase();
+        answered = true; $('in').disabled = true;
+        $('bCheck').style.display = 'none'; $('bNext').style.display = 'inline-block';
+
+        if(val === correct || (cur.a.includes('/') && cur.a.toLowerCase().split('/').map(x => x.trim()).includes(val))) {
+            $('cardExam').classList.add('correct');
+            let fbHtml = `<span style="color:var(--success); font-weight:800;">ZUZENA! ✨</span>`;
+            if(parts[1]) fbHtml += `<div class="note" style="margin-top:8px; color:var(--success)">${parts[0].trim()} <span style="opacity:0.8">*${parts[1]}</span></div>`;
+            $('fb').innerHTML = fbHtml;
+        } else {
+            $('cardExam').classList.add('wrong');
+            let fbHtml = `<span style="color:var(--error); font-weight:800;">OKERRA! ❌</span>`;
+            fbHtml += `<div style="margin-top:5px; color:var(--error)">Erantzuna: <strong>${parts[0].trim()}</strong></div>`;
+            if(parts[1]) fbHtml += `<div class="note" style="margin-top:8px; color:var(--error)">*${parts[1]}</div>`;
+            $('fb').innerHTML = fbHtml;
+        }
+        $('bNext').focus();
+    }
+    document.addEventListener('keydown', e => { if(e.key === 'Enter') mode === 'study' ? loadCard() : (answered ? loadCard() : check()); });
+    document.addEventListener('DOMContentLoaded', () => { populateDB(); initTopic('trinkoak'); });
+    </script>
+</body>
+</html>
