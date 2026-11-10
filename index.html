@@ -258,6 +258,31 @@ function populateDB() {
                 {q:p+" (Pl.)", a:ondPlPast, c:"NOR-NORI", t:"ONDORIOA (LEHENALDIA)"}
             );
         });
+        // NOR-NORI con NOR de 1a/2a persona (ni, gu, zu, zuek). Fuente: docentes.educacion.navarra.es/fmorenot/1/indik_perif_NOR_NORI_guztiak_taula.html
+        [
+            ["Ni zuri","banintzaizu","nintzaizuke","nintzaizukeen"],
+            ["Ni zuei","banintzaizue","nintzaizueke","nintzaizuekeen"],
+            ["Ni hari","banintzaio","nintzaioke","nintzaiokeen"],
+            ["Ni haiei","banintzaie","nintzaieke","nintzaiekeen"],
+            ["Gu zuri","bagintzaizkizu","gintzaizkizuke","gintzaizkizukeen"],
+            ["Gu zuei","bagintzaizkizue","gintzaizkizueke","gintzaizkizuekeen"],
+            ["Gu hari","bagintzaizkio","gintzaizkioke","gintzaizkiokeen"],
+            ["Gu haiei","bagintzaizkie","gintzaizkieke","gintzaizkiekeen"],
+            ["Zu niri","bazintzaizkit","zintzaizkidake","zintzaizkidakeen"],
+            ["Zu hari","bazintzaizkio","zintzaizkioke","zintzaizkiokeen"],
+            ["Zu guri","bazintzaizkigu","zintzaizkiguke","zintzaizkigukeen"],
+            ["Zu haiei","bazintzaizkie","zintzaizkieke","zintzaizkiekeen"],
+            ["Zuek niri","bazintzaizkidate","zintzaizkidakete","zintzaizkidaketen"],
+            ["Zuek hari","bazintzaizkiote","zintzaizkiokete","zintzaizkioketen"],
+            ["Zuek guri","bazintzaizkigute","zintzaizkigukete","zintzaizkiguketen"],
+            ["Zuek haiei","bazintzaizkiete","zintzaizkiekete","zintzaizkieketen"]
+        ].forEach(r => {
+            MASTER_DB.baldintzak.push(
+                {q:r[0], a:r[1], c:"NOR-NORI", t:"BALDINTZA"},
+                {q:r[0], a:r[2], c:"NOR-NORI", t:"ONDORIOA (HIPOTETIKOA)"},
+                {q:r[0], a:r[3], c:"NOR-NORI", t:"ONDORIOA (LEHENALDIA)"}
+            );
+        });
         const bNNN_b = {"Nik":{"Zuri":"banizu/banizkizu","Hari":"banio/banizkio","Zuei":"banizue/banizkizue","Haiei":"banie/banizkie"},"Zuk":{"Niri":"bazenit/bazenizkit","Hari":"bazenio/bazenizkio","Guri":"bazenigu/bazenizkigu","Haiei":"bazenie/bazenizkie"},"Hark":{"Niri":"balit/balizkit","Zuri":"balizu/balizkizu","Hari":"balio/balizkio","Guri":"baligu/balizkigu","Zuei":"balizue/balizkizue","Haiei":"balie/balizkie"},"Guk":{"Zuri":"bagenizu/bagenizkizu","Hari":"bagenio/bagenizkio","Zuei":"bagenizue/bagenizkizue","Haiei":"bagenie/bagenizkie"},"Zuek":{"Niri":"bazenidate/bazenizkidate","Hari":"bazeniote/bazenizkiote","Guri":"bazenigute/bazenizkigute","Haiei":"bazeniete/bazenizkiete"},"Haiek":{"Niri":"balidate/balizkidate","Zuri":"balizute/balizkizute","Hari":"baliote/balizkiote","Guri":"baligute/balizkigute","Zuei":"balizuete/balizkizuete","Haiei":"baliete/balizkiete"}};
         const bNNN_o = {"Nik":{"Zuri":"nizuke/nizkizuke","Hari":"nioke/nizkioke","Zuei":"nizueke/nizkizueke","Haiei":"nieke/nizkieke"},"Zuk":{"Niri":"zenidake/zenizkidake","Hari":"zenioke/zenizkioke","Guri":"zeniguke/zenizkiguke","Haiei":"zenieke/zenizkieke"},"Hark":{"Niri":"lidake/lizkidake","Zuri":"lizuke/lizkizuke","Hari":"lioke/lizkioke","Guri":"liguke/lizkiguke","Zuei":"lizueke/lizkizueke","Haiei":"lieke/lizkieke"},"Guk":{"Zuri":"genizuke/genizkizuke","Hari":"genioke/genizkioke","Zuei":"genizueke/genizkizueke","Haiei":"genieke/genizkieke"},"Zuek":{"Niri":"zenidakete/zenizkidakete","Hari":"zeniokete/zenizkiokete","Guri":"zenigukete/zenizkigukete","Haiei":"zeniekete/zenizkiekete"},"Haiek":{"Niri":"lidakete/lizkidakete","Zuri":"lizukete/lizkizukete","Hari":"liokete/lizkiokete","Guri":"ligukete/lizkigukete","Zuei":"lizuete/lizkizuete","Haiei":"liekete/lizkiekete"}};
         
